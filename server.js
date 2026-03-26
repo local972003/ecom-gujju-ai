@@ -9,7 +9,9 @@ dotenv.config();
 
 const app = express();
 app.use(cors());
-
+app.get("/", (req, res) => {
+  res.send("Backend is running 🚀");
+});
 const upload = multer({ dest: "uploads/" });
 
 app.post("/analyze-image", upload.single("image"), async (req, res) => {
