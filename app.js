@@ -41,5 +41,7 @@ async function uploadImage() {
   } catch (err) {
     loader.classList.add("hidden");
     output.innerHTML = "❌ Error generating result";
-  }
+  }app.get("/", (req, res) => {
+  res.send("Backend running 🚀");
+});
 }
