@@ -1,47 +1,72 @@
-async function uploadImage() {
-  const file = document.getElementById("image").files[0];
-  const loader = document.getElementById("loaderOverlay");
-  const output = document.getElementById("output");
+import express from "express";
+import cors from "cors";
+import multer from "multer";
+import fs from "fs";
+import axios from "axios";
 
-  if (!file) {
-    alert("Please upload image");
-    return;
-  }
+const app = express();
+app.use(cors());
 
-  output.innerHTML = "";
-  loader.classList.remove("hidden");
+const upload = multer({ dest: "uploads/" });
 
-  const formData = new FormData();
-  formData.append("image", file);
-
-  try {
-    const res = await fetch("https://ecom-gujju-ai-1.onrender.com/generate", {
-      method: "POST",
-      body: formData
-    });
-
-    const data = await res.json();
-
-    loader.classList.add("hidden");
-
-    output.innerHTML = `
-      <div class="bg-white/10 p-4 rounded-xl border border-white/20">
-        <b class="text-blue-400">📌 Title</b><br>${data.title}
-      </div>
-
-      <div class="bg-white/10 p-4 rounded-xl border border-white/20">
-        <b class="text-blue-400">📝 Description</b><br>${data.description}
-      </div>
-
-      <div class="bg-white/10 p-4 rounded-xl border border-white/20">
-        <b class="text-blue-400">🔍 Keywords</b><br>${data.keywords}
-      </div>
-    `;
-
-  } catch (err) {
-    loader.classList.add("hidden");
-    output.innerHTML = "❌ Error generating result";
-  }app.get("/", (req, res) => {
+// TEST ROUTE
+app.get("/", (req, res) => {
   res.send("Backend running 🚀");
 });
-}
+
+// IMAGE ANALYSIS ROUTE
+app.post("/analyze-image", upload.single("image"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.json({ error: "No image uploaded" });
+    }
+
+    const imageBase64 = fs.readFileSync(req.file.path, { encoding: "base64" });
+
+    const response = await axios.post(
+      "https://integrate.api.nvidia.com/v1/chat/completions",
+      {
+        model: "google/gemma-3n-e4b-it",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `Analyze this product image and return:
+Title, Description, Keywords`
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:image/jpeg;base64,${imageBase64}`
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 300
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.NVIDIA_API_KEY}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    fs.unlinkSync(req.file.path);
+
+    const result = response.data.choices[0].message.content;
+
+    res.json({
+      result
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.json({ result: "Error analyzing image" });
+  }
+});
+
+app.listen(3000, () => console.log("🚀 IMAGE AI BACKEND RUNNING"));
