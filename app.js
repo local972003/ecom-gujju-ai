@@ -15,7 +15,7 @@ async function uploadImage() {
   formData.append("image", file);
 
   try {
-    const res = await fetch("https://ecom-gujju-ai-1.onrender.com", {
+    const res = await fetch("https://ecom-gujju-ai-1.onrender.com/generate", {
       method: "POST",
       body: formData
     });
