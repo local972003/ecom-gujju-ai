@@ -15,7 +15,7 @@ async function uploadImage() {
   formData.append("image", file);
 
   try {
-    const res = await fetch("http://localhost:3000/analyze-image", {
+    const res = await fetch("https://ecom-gujju-backend.onrender.com/generate", {
       method: "POST",
       body: formData
     });
